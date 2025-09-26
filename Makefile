@@ -21,6 +21,7 @@ help:
 	@echo "  run          Run main analysis pipeline"
 	@echo "  analyze      Run data analysis"
 	@echo "  visualize    Generate visualization charts"
+	@echo "  trend        Run comprehensive trend analysis"
 	@echo "  jupyter      Start Jupyter notebook server"
 	@echo ""
 	@echo "Data Management:"
@@ -54,6 +55,9 @@ analyze:
 
 visualize:
 	python -m src.analyzers.quick_visualization
+
+trend:
+	python scripts/trend_analysis.py
 
 jupyter:
 	python scripts/start_jupyter.py

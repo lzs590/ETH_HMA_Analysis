@@ -6,6 +6,5 @@ components used throughout the application.
 """
 
 from .config import *
-from .data_viewer import DataViewer
 
-__all__ = ["DataViewer"]
+__all__ = []
