@@ -1,0 +1,26 @@
+[global]
+# Streamlit配置
+developmentMode = false
+
+[server]
+# 服务器配置
+port = 8501
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+# 浏览器配置
+gatherUsageStats = false
+
+[theme]
+# 主题配置
+primaryColor = "#1f77b4"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
+
+[logger]
+# 日志配置
+level = "info"

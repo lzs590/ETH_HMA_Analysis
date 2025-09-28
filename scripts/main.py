@@ -8,11 +8,13 @@ import argparse
 from pathlib import Path
 import logging
 
-# Add src to Python path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Ensure project root is on PYTHONPATH so we can import the src package
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-from managers.project_manager import ProjectManager
-from utils.config import *
+from src.managers.project_manager import ProjectManager
+from src.utils.config import *
 
 def setup_logging(verbose: bool = False):
     """设置日志配置"""

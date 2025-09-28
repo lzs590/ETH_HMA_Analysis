@@ -1,76 +1,64 @@
 #!/usr/bin/env python3
 """
-启动Jupyter Notebook的辅助脚本
+Jupyter启动脚本
+自动启动Jupyter Notebook并设置环境
 """
+
 import subprocess
 import sys
 import os
 from pathlib import Path
 
-def check_jupyter():
-    """检查Jupyter是否已安装"""
-    try:
-        import jupyter
-        return True
-    except ImportError:
-        return False
-
-def install_jupyter():
-    """安装Jupyter"""
-    print("📦 正在安装Jupyter Notebook...")
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "jupyter", "matplotlib", "seaborn"])
-        print("✅ Jupyter安装完成")
-        return True
-    except subprocess.CalledProcessError:
-        print("❌ Jupyter安装失败")
-        return False
-
 def start_jupyter():
     """启动Jupyter Notebook"""
-    print("🚀 启动Jupyter Notebook...")
-    print("📝 请在浏览器中打开显示的URL")
-    print("📁 打开 ETH_HMA_Analysis.ipynb 文件开始分析")
-    print("=" * 50)
+    print("🚀 启动ETH HMA分析Jupyter环境...")
     
-    try:
-        # 切换到项目目录
-        project_dir = Path(__file__).parent
-        os.chdir(project_dir)
-        
-        # 启动Jupyter
-        subprocess.run(["jupyter", "notebook"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"❌ 启动Jupyter失败: {e}")
-    except KeyboardInterrupt:
-        print("\n⏹️  Jupyter已停止")
-
-def main():
-    print("🔍 ETH HMA 数据分析 - Jupyter启动器")
-    print("=" * 50)
+    # 检查当前目录
+    current_dir = Path.cwd()
+    print(f"📁 当前目录: {current_dir}")
     
-    # 检查Jupyter是否已安装
-    if not check_jupyter():
-        print("❌ Jupyter未安装")
-        choice = input("是否安装Jupyter? (y/n): ").lower().strip()
-        if choice == 'y':
-            if not install_jupyter():
-                return
-        else:
-            print("请手动安装Jupyter: pip install jupyter matplotlib seaborn")
-            return
+    # 检查notebooks目录
+    notebooks_dir = current_dir / "notebooks"
+    if not notebooks_dir.exists():
+        print("❌ notebooks目录不存在")
+        return False
     
-    # 检查Notebook文件是否存在
-    notebook_file = Path("ETH_HMA_Analysis.ipynb")
-    if not notebook_file.exists():
-        print("❌ 找不到ETH_HMA_Analysis.ipynb文件")
-        return
+    print(f"📂 Notebooks目录: {notebooks_dir}")
     
-    print("✅ 环境检查通过")
-    print("📊 准备启动数据分析环境...")
+    # 检查数据文件
+    data_dir = current_dir / "src" / "utils" / "data"
+    data_files = list(data_dir.glob("*.parquet"))
+    print(f"📊 数据文件: {len(data_files)} 个")
+    
+    if not data_files:
+        print("⚠️ 未找到数据文件，请先运行数据收集脚本")
+        print("💡 运行命令: python scripts/main.py")
     
     # 启动Jupyter
-    start_jupyter()
+    try:
+        print("🔧 启动Jupyter Notebook...")
+        print("📝 建议运行顺序:")
+        print("  1. 00_快速开始.ipynb - 环境设置")
+        print("  2. 01_数据加载与预处理.ipynb - 数据准备")
+        print("  3. 02_4h级别策略分析.ipynb - 深度分析")
+        print("\n🌐 Jupyter将在浏览器中打开...")
+        
+        # 启动Jupyter Notebook
+        subprocess.run([
+            sys.executable, "-m", "jupyter", "notebook",
+            "--notebook-dir=notebooks",
+            "--ip=127.0.0.1",
+            "--port=8888",
+            "--no-browser"
+        ])
+        
+    except KeyboardInterrupt:
+        print("\n👋 Jupyter已停止")
+    except Exception as e:
+        print(f"❌ 启动失败: {e}")
+        return False
+    
+    return True
 
 if __name__ == "__main__":
-    main()
+    start_jupyter()

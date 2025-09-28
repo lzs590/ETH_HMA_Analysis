@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 
 from ..collectors.data_collector import DataCollector
-from ..analyzers.math_brain import MathBrain
+from ..eth_hma_analysis.core.math_brain import MathBrain
 from .librarian import Librarian
 from ..utils.config import *
 

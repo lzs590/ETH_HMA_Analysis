@@ -23,7 +23,7 @@ __license__ = "MIT"
 
 # Package imports
 from .collectors.data_collector import DataCollector
-from .analyzers.math_brain import MathBrain
+from .eth_hma_analysis.core.math_brain import MathBrain
 from .managers.librarian import Librarian
 from .managers.project_manager import ProjectManager
 

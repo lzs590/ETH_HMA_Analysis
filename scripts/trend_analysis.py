@@ -21,8 +21,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pandas as pd
 import numpy as np
-from analyzers.trend_analyzer import TrendAnalyzer
+# 直接导入核心模块
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src', 'eth_hma_analysis', 'core'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from trend_analyzer import TrendAnalyzer
 from analyzers.trend_visualizer import TrendVisualizer
+from visualizers.strategy_visualizer import StrategyVisualizer
+from reporters.strategy_reporter import StrategyReporter
 from utils.config import *
 
 def setup_logging(verbose: bool = False):
@@ -73,17 +81,16 @@ def run_trend_analysis(data: dict, hma_period: int = 45, slope_threshold: float 
         # 初始化分析器
         analyzer = TrendAnalyzer(hma_period=hma_period, slope_threshold=slope_threshold)
         
-        # 1. 计算HMA斜率并识别拐点
+        # 运行完整趋势分析（包括改进算法和下跌趋势专项分析）
+        complete_report = analyzer.run_complete_analysis(df.copy())
+        
+        # 提取基础数据用于可视化
         df_with_slope = analyzer.calculate_hma_slope(df.copy())
-        
-        # 2. 分析事件
         events = analyzer.analyze_events(df_with_slope)
-        
-        # 3. 分析趋势区间
         intervals = analyzer.analyze_trend_intervals(df_with_slope)
         
-        # 4. 生成报告
-        report = analyzer.generate_trend_report(intervals, events)
+        # 使用完整报告
+        report = complete_report
         
         results[interval] = {
             'data': df_with_slope,
@@ -140,6 +147,7 @@ def generate_visualizations(results: dict, output_dir: str = "assets/charts", us
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     visualizer = TrendVisualizer(use_chinese=use_chinese)
+    strategy_visualizer = StrategyVisualizer(str(output_dir))
     
     for interval, result in results.items():
         print(f"🎨 生成 {interval} 可视化图表...")
@@ -173,6 +181,29 @@ def generate_visualizations(results: dict, output_dir: str = "assets/charts", us
             result['intervals'], 
             result['events'], 
             save_path=str(comprehensive_path)
+        )
+        
+        # 5. 策略总览图
+        strategy_overview_path = strategy_visualizer.create_strategy_overview(
+            result['data'],
+            result['intervals'],
+            result['report'].get('uptrend_analysis', {}),
+            result['report'].get('downtrend_analysis', {}),
+            interval
+        )
+        
+        # 6. 策略表现分析图
+        strategy_performance_path = strategy_visualizer.create_strategy_performance(
+            result['report'].get('uptrend_analysis', {}),
+            result['report'].get('downtrend_analysis', {}),
+            interval
+        )
+        
+        # 7. 风险分析图
+        risk_analysis_path = strategy_visualizer.create_risk_analysis(
+            result['report'].get('uptrend_analysis', {}),
+            result['report'].get('downtrend_analysis', {}),
+            interval
         )
 
 def print_summary(results: dict):
@@ -240,6 +271,32 @@ def print_summary(results: dict):
             pl_ratio = report['interval_analysis']['profit_loss_ratio']
             print(f"\n💰 盈亏比: {pl_ratio:.2f}")
         
+        # 上涨趋势专项分析（做多策略）
+        if 'uptrend_analysis' in report and report['uptrend_analysis']['total_uptrends'] > 0:
+            uptrend = report['uptrend_analysis']
+            print(f"\n📈 上涨趋势专项分析（做多策略）:")
+            print(f"   ├─ 总上涨趋势数: {uptrend['total_uptrends']}")
+            print(f"   ├─ 平均做多理想收益: {uptrend['avg_long_ideal_profit']:.2f}%")
+            print(f"   ├─ 最大做多理想收益: {uptrend['max_long_ideal_profit']:.2f}%")
+            print(f"   ├─ 平均做多实际收益: {uptrend['avg_long_actual_profit']:.2f}%")
+            print(f"   ├─ 最大做多实际收益: {uptrend['max_long_actual_profit']:.2f}%")
+            print(f"   ├─ 平均做多风险损失: {uptrend['avg_long_risk_loss']:.2f}%")
+            print(f"   ├─ 最大做多风险损失: {uptrend['max_long_risk_loss']:.2f}%")
+            print(f"   └─ 平均风险收益比: {uptrend['avg_risk_reward_ratio']:.2f}")
+        
+        # 下跌趋势专项分析（做空策略）
+        if 'downtrend_analysis' in report and report['downtrend_analysis']['total_downtrends'] > 0:
+            downtrend = report['downtrend_analysis']
+            print(f"\n📉 下跌趋势专项分析（做空策略）:")
+            print(f"   ├─ 总下跌趋势数: {downtrend['total_downtrends']}")
+            print(f"   ├─ 平均做空理想收益: {downtrend['avg_short_ideal_profit']:.2f}%")
+            print(f"   ├─ 最大做空理想收益: {downtrend['max_short_ideal_profit']:.2f}%")
+            print(f"   ├─ 平均做空实际收益: {downtrend['avg_short_actual_profit']:.2f}%")
+            print(f"   ├─ 最大做空实际收益: {downtrend['max_short_actual_profit']:.2f}%")
+            print(f"   ├─ 平均做空风险损失: {downtrend['avg_short_risk_loss']:.2f}%")
+            print(f"   ├─ 最大做空风险损失: {downtrend['max_short_risk_loss']:.2f}%")
+            print(f"   └─ 平均风险收益比: {downtrend['avg_risk_reward_ratio']:.2f}")
+        
         print("-" * 50)
 
 def main():
@@ -284,7 +341,13 @@ def main():
             print("\n🎨 生成可视化图表...")
             generate_visualizations(results, args.charts_dir, use_chinese=not args.english)
         
-        # 5. 打印摘要
+        # 5. 生成Markdown报告
+        print("\n📝 生成策略分析报告...")
+        reporter = StrategyReporter(args.output_dir)
+        report_file = reporter.generate_strategy_report(results)
+        print(f"📄 策略报告已生成: {report_file}")
+        
+        # 6. 打印摘要
         print_summary(results)
         
         print("\n✅ 趋势分析完成！")

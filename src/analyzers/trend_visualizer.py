@@ -15,7 +15,11 @@ import seaborn as sns
 from typing import List, Dict, Optional
 import logging
 from pathlib import Path
-from .trend_analyzer import TrendInterval, EventAnalysis
+# 导入已移动到core目录的模块
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'eth_hma_analysis', 'core'))
+from trend_analyzer import TrendInterval, EventAnalysis
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +28,7 @@ logger = logging.getLogger(__name__)
 class TrendVisualizer:
     """趋势分析可视化器"""
     
-    def __init__(self, figsize: tuple = (15, 10), style: str = 'whitegrid', use_chinese: bool = True):
+    def __init__(self, figsize: tuple = (15, 10), style: str = 'whitegrid', use_chinese: bool = False):
         """
         初始化可视化器
         
@@ -151,45 +155,34 @@ class TrendVisualizer:
         logger.info("趋势可视化器初始化完成")
     
     def _setup_fonts(self):
-        """设置字体"""
+        """设置字体 - 强制中文字体解决方案"""
         import matplotlib
-        matplotlib.rcParams['axes.unicode_minus'] = False
+        import matplotlib.pyplot as plt
+        import matplotlib.font_manager as fm
         
         if self.use_chinese:
-            # 尝试设置中文字体
-            try:
-                import matplotlib.font_manager as fm
-                available_fonts = [f.name for f in fm.fontManager.ttflist]
-                
-                # 按优先级尝试中文字体
-                chinese_fonts = [
-                    'Arial Unicode MS',
-                    'PingFang SC',
-                    'Hiragino Sans GB',
-                    'STHeiti',
-                    'SimHei',
-                    'Microsoft YaHei',
-                    'WenQuanYi Micro Hei'
-                ]
-                
-                for font in chinese_fonts:
-                    if font in available_fonts:
-                        matplotlib.rcParams['font.sans-serif'] = [font] + matplotlib.rcParams['font.sans-serif']
-                        logger.info(f"✅ 已设置中文字体: {font}")
-                        break
-                else:
-                    logger.warning("⚠️ 未找到中文字体，图表可能显示为方框")
-                    
-            except Exception as e:
-                logger.warning(f"⚠️ 字体设置失败: {e}")
-        else:
-            # 使用英文字体，明确避免中文字体
-            matplotlib.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'sans-serif']
+            # 强制重置并设置中文字体
+            matplotlib.rcdefaults()  # 重置所有设置
+            
+            # 强制设置中文字体
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
+            plt.rcParams['axes.unicode_minus'] = False
+            plt.rcParams['font.size'] = 12
+            
+            # 确保matplotlib全局设置也生效
             matplotlib.rcParams['font.family'] = 'sans-serif'
-            # 清除可能的中文字体设置
-            if 'font.serif' in matplotlib.rcParams:
-                matplotlib.rcParams['font.serif'] = ['Times New Roman', 'DejaVu Serif', 'serif']
-            logger.info("✅ 已设置英文字体")
+            matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
+            matplotlib.rcParams['axes.unicode_minus'] = False
+            matplotlib.rcParams['font.size'] = 12
+            
+            logger.info("中文字体强制设置完成: SimHei, Microsoft YaHei")
+        else:
+            # 使用英文字体
+            plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'sans-serif']
+            matplotlib.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'sans-serif']
+            matplotlib.rcParams['axes.unicode_minus'] = False
+            matplotlib.rcParams['font.size'] = 10
     
     def plot_turning_points(self, df: pd.DataFrame, save_path: Optional[str] = None) -> None:
         """

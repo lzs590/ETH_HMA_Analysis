@@ -1,0 +1,28 @@
+# ETH HMA Analysis - matplotlib配置文件
+# 中文字体支持配置
+
+# 字体设置
+font.family: sans-serif
+font.sans-serif: SimHei, Microsoft YaHei, Arial Unicode MS, DejaVu Sans, Bitstream Vera Sans, Lucida Grande, Verdana, Geneva, Lucid, Arial, Helvetica, Avant Garde, sans-serif
+font.size: 12
+
+# 负号显示
+axes.unicode_minus: false
+
+# 图表样式
+figure.dpi: 100
+figure.figsize: 12, 8
+figure.facecolor: white
+
+# 坐标轴设置
+axes.grid: True
+axes.grid.axis: both
+grid.alpha: 0.3
+
+# 颜色设置 - 使用默认颜色循环
+# axes.prop_cycle: cycler('color', ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
+
+# 保存设置
+savefig.dpi: 300
+savefig.bbox: tight
+savefig.facecolor: white
